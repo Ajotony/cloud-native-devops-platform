@@ -26,3 +26,12 @@
         name: docker
         state: started
         enabled: true
+
+    - name: Pull application image
+      docker_container:
+        name: cloud-native-app
+        image: codecaptainx/cloud-native-app:latest
+        state: started
+        restart_policy: always
+        ports:
+          - "5000:5000"
