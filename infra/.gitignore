@@ -5,3 +5,6 @@ terraform.tfstate.backup
 *.tfstate.*
 terraform.tfvars
 *.tfplan
+*.pem
+.env
+*.key
