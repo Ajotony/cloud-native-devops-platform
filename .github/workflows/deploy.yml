@@ -39,18 +39,23 @@ jobs:
           printf "%s\n" "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
-          cat <<EOF > ~/.ssh/config
-          Host *
-            StrictHostKeyChecking no
-            UserKnownHostsFile=/dev/null
+          ssh-keyscan -H $EC2_IP >> ~/.ssh/known_hosts 2>/dev/null || true
+
+          cat <<EOF >> ~/.ssh/config
+          Host myserver
+            HostName $EC2_IP
+            User ubuntu
+            IdentityFile ~/.ssh/id_rsa
+            IdentitiesOnly yes
+            ConnectTimeout 5
           EOF
 
       - name: Wait for SSH to be ready
         run: |
           for i in {1..30}; do
-            nc -zv $EC2_IP 22 && exit 0
+            ssh myserver "echo ready" && exit 0
             echo "waiting for SSH..."
-            sleep 10
+            sleep 10          
           done
           echo "SSH not ready after timeout"
           exit 1
