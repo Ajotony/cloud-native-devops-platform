@@ -5,6 +5,6 @@ variable "aws_region" {
 }
 
 variable "ssh_key_name" {
-  description  = "Name of the existing AWS key pair for ssh access"
+  description  = "Name of the existing AWS keypair for ssh access"
   type  = string
 }
