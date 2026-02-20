@@ -40,29 +40,33 @@ jobs:
           printf "%s\n" "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
              
-         #Add the host key first so CI SSH is non-interactive and does not fail on first connection.
-          ssh-keyscan -H $EC2_IP >> ~/.ssh/known_hosts 2>/dev/null || true
-
-          cat <<EOF >> ~/.ssh/config
-          Host myserver
-            HostName $EC2_IP
-            User ubuntu
-            IdentityFile ~/.ssh/id_rsa
-            IdentitiesOnly yes
-            ConnectTimeout 5
+          # Disable host key verification for CI since runners are  ephemeral
+          cat <<EOF > ~/.ssh/config
+          Host *
+            StrictHostKeyChecking no
+            UserKnownHostsFile=/dev/null
           EOF
+
 
       - name: Wait for SSH to be ready
         run: |
-           # Instance can have a public IP before sshd is accepting connections, retry until sshd is ready.
-          for i in {1..30}; do
-            ssh myserver "echo ready" && exit 0
-            echo "waiting for SSH..."
+          # Retry SSH connection until the instance is fully ready.       
+          echo "Waiting for SSH..."
 
-            sleep 10          
+
+          for i in {1..30}; do
+            if ssh -o ConnectTimeout=5 -i ~/.ssh/id_rsa ubuntu@$EC2_IP "echo ready" 2>/dev/null; then
+              echo "SSH is ready."
+              exit 0
+            fi
+
+            echo "SSH not ready yet..."
+            sleep 10     
           done
+
           echo "SSH not ready after timeout"
           exit 1
+
 
       - name: Configure server and deploy app
         run: ansible-playbook -i ansible/inventory.ini -e "ansible_host=$EC2_IP" ansible/docker.yml
