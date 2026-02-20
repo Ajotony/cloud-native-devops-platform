@@ -6,6 +6,7 @@ terraform {
     }
   }
 
+   # Use S3 + DynamoDB so local runs and GitHub Actions share one state and avoid lock conflicts.
   backend "s3" {
     bucket  = "cloud-native-devops-tf-state-01"
     key  = "cloud-native-devops-platform/terraform.tfstate"
@@ -23,6 +24,7 @@ resource "aws_security_group" "firewall"{
   name  = "cloud-native-firewall"
   description  = "Allow SSH and application traffic"
 
+  # Kept open for CI testing across changing runner IPs, next step is restricting to trusted CIDRs.
   ingress {
     description  = "SSH access"
     from_port  = 22
@@ -70,6 +72,7 @@ resource "aws_instance" "ec2" {
   ami  = data.aws_ami.ubuntu.id
   instance_type  = "t2.micro"
 
+  # Must reference an existing AWS key pair name, private key stays only in GitHub Secrets.
   key_name  = var.ssh_key_name
 
   vpc_security_group_ids  = [

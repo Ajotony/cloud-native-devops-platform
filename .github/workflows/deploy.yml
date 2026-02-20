@@ -10,6 +10,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
+      # Map these once at job level so Terraform and Ansible read the same AWS context.
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
@@ -38,7 +39,8 @@ jobs:
           mkdir -p ~/.ssh
           printf "%s\n" "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-
+             
+         #Add the host key first so CI SSH is non-interactive and does not fail on first connection.
           ssh-keyscan -H $EC2_IP >> ~/.ssh/known_hosts 2>/dev/null || true
 
           cat <<EOF >> ~/.ssh/config
@@ -52,14 +54,15 @@ jobs:
 
       - name: Wait for SSH to be ready
         run: |
+           # Instance can have a public IP before sshd is accepting connections, retry until sshd is ready.
           for i in {1..30}; do
             ssh myserver "echo ready" && exit 0
             echo "waiting for SSH..."
+
             sleep 10          
           done
           echo "SSH not ready after timeout"
           exit 1
-
 
       - name: Configure server and deploy app
         run: ansible-playbook -i ansible/inventory.ini -e "ansible_host=$EC2_IP" ansible/docker.yml
