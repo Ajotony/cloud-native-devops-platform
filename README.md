@@ -1,4 +1,4 @@
-# Cloud-Native DevOps Platform
+# CI-Orchestrated Infrastructure Platform
 
 This repository contains a CI-driven infrastructure platform that provisions cloud infrastructure, configures servers, and deploys a containerized application using Infrastructure as Code.
 
